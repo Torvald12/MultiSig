@@ -50,7 +50,7 @@ contract MultiSig is owned {
       mapping (address => bool) voted;
   }
 
-  //CHECK THIS!!!
+  //Vote structure
   struct Vote {
       bool isSupported;
       address voterAddress;
