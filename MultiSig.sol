@@ -31,6 +31,7 @@ contract MultiSig is owned {
   uint public ttl;
   uint public threshold;
   uint public expiredTime;
+  uint public addressCounter;
   Member[] public members;
   Proposal[] public proposals;
 
@@ -130,17 +131,19 @@ contract MultiSig is owned {
   }
 
   //Execute the signatures
-  function executeSignatures(uint8[] sigV, bytes32[] sigR, bytes32[] sigS, address destinationAddress, bytes32 message) public returns(address) {
+  function executeSignatures(uint8[] sigV, bytes32[] sigR, bytes32[] sigS, address destinationAddress, bytes32 message, uint someValue) public returns(address) {
     require(sigR.length == threshold);
     require(sigR.length == sigS.length && sigR.length == sigV.length);
     bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-    bytes32 txHash = keccak256(byte(0x19), byte(0), destinationAddress, message, prefix);
+    bytes32 txHash = keccak256(byte(0x19), byte(0), destinationAddress, message, prefix, addressCounter, someValue);
     address lastAddress = address(0);
     for (uint i = 0; i < threshold; i++) {
         address recoveredAddress = ecrecover(txHash, sigV[i], sigR[i], sigS[i]);
         require(recoveredAddress > lastAddress && isOwner[recoveredAddress]);
         lastAddress = recoveredAddress;
     }
+    addressCounter = addressCounter + 1;
+    require(destinationAddress.call.value(someValue)(message));
     return lastAddress;
   }
 
