@@ -1,5 +1,14 @@
 pragma solidity ^0.4.22;
 
+/*library Balances {
+    function send(mapping (address => uint256) balances, address from, address etherRecipient, uint etherAmount) internal {
+        require(balances[from] >= etherAmount);
+        require(balances[etherRecipient] + etherAmount >= balances[etherRecipient]);
+        balances[from] -= etherAmount;
+        balances[etherRecipient] += etherAmount;
+    }
+}*/
+
 contract owned {
     address public owner;
     mapping (address => uint) public memberId;
@@ -34,8 +43,10 @@ contract MultiSig is owned {
   uint public addressCounter;
   Member[] public members;
   Proposal[] public proposals;
+  mapping (address => uint256) public balanceOf;
 
   event ProposalExecuted(uint proposalNumber, uint currentResult, uint numberOfVotes, bool proposalPassed);
+  event EtherSending(address from, address etherRecipient, uint etherAmount);
 
   struct Proposal {
       address recipient;
@@ -57,11 +68,12 @@ contract MultiSig is owned {
   }
 
   //Constructor
-  function Constructor(uint _threshold) public {
+  function Constructor(uint _threshold, uint256 initialSupply) public {
     addMember(0, "");
     addMember(owner, 'Owner');
     setVotingRules(ttl);
     threshold = _threshold;
+    balanceOf[msg.sender] = initialSupply;
   }
 
   //Add new member
@@ -119,7 +131,7 @@ contract MultiSig is owned {
   }
 
   //Revoting process
-  function revoting(uint proposalNumber, bool isSupported) onlyMembers public returns(uint, uint){
+  function revoting(uint proposalNumber, bool isSupported) onlyMembers public returns(uint, uint) {
       require(prop.voted[msg.sender]);
       Proposal storage prop = proposals[proposalNumber];
       prop.voted[msg.sender] = false;
@@ -146,6 +158,14 @@ contract MultiSig is owned {
     require(destinationAddress.call.value(someValue)(message));
     return lastAddress;
   }
+
+  // Transfer etherAmount to etherRecipient
+  function transferEther(address etherRecipient, uint256 etherAmount) public returns (bool success) {
+        require(balanceOf[msg.sender] >= etherAmount); // Check if the sender has enough Ether
+        require(balanceOf[etherRecipient] + etherAmount >= balanceOf[etherRecipient]); // Check for overflows
+        balanceOf[msg.sender] -= etherAmount;
+        balanceOf[etherRecipient] += etherAmount;
+    }
 
   //Count the votes proposal and execute if there are more than half support votes
   function executeProposal(uint proposalNumber, bytes transactionBytecode) public {
