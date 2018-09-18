@@ -1,14 +1,5 @@
 pragma solidity ^0.4.22;
 
-/*library Balances {
-    function send(mapping (address => uint256) balances, address from, address etherRecipient, uint etherAmount) internal {
-        require(balances[from] >= etherAmount);
-        require(balances[etherRecipient] + etherAmount >= balances[etherRecipient]);
-        balances[from] -= etherAmount;
-        balances[etherRecipient] += etherAmount;
-    }
-}*/
-
 contract owned {
     address public owner;
     mapping (address => uint) public memberId;
@@ -160,7 +151,7 @@ contract MultiSig is owned {
   }
 
   // Transfer etherAmount to etherRecipient
-  function transferEther(address etherRecipient, uint256 etherAmount) public returns (bool success) {
+  function transferEther(address etherRecipient, uint256 etherAmount) payable public returns (bool success) {
         require(balanceOf[msg.sender] >= etherAmount); // Check if the sender has enough Ether
         require(balanceOf[etherRecipient] + etherAmount >= balanceOf[etherRecipient]); // Check for overflows
         balanceOf[msg.sender] -= etherAmount;
