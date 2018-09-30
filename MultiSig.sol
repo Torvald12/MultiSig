@@ -35,6 +35,8 @@ contract MultiSig is owned {
     uint public threshold;
     uint public expiredTime;
     uint public addressCounter;
+    uint public numberOfVotes;
+    uint public currentResult;
     Member[] public members;
     Proposal[] public proposals;
     mapping (address => uint256) public balanceOf;
@@ -64,14 +66,13 @@ contract MultiSig is owned {
     }
 
     //Constructor
-    function Constructor(uint _threshold, uint256 initialSupply) public {
+    function Constructor(uint _threshold, uint256 initialSupply, uint proposalNumber) public {
         addMember(0, "");
         addMember(owner, 'Owner');
         setVotingRules(ttl);
+        nulling(proposalNumber);
         threshold = _threshold;
         balanceOf[msg.sender] = initialSupply;
-        prop.numberOfVotes = 0;
-        prop.currentResult = 0;
     }
 
     //Add new member
@@ -127,15 +128,19 @@ contract MultiSig is owned {
         return (prop.numberOfVotes, prop.currentResult);
     }
 
+    //Reseting of current results
+    function zeroing(uint proposalNumber) onlyOwner public {
+        Proposal storage prop = proposals[proposalNumber];
+        prop.numberOfVotes = 0;
+        prop.currentResult = 0;
+    }
+
     //Revoting process
     function revoting(uint proposalNumber, bool isSupported) onlyMembers public returns(uint, uint) {
-        require(prop.voted[msg.sender]);
         Proposal storage prop = proposals[proposalNumber];
+        require(prop.voted[msg.sender]);
         prop.voted[msg.sender] = false;
-        prop.numberOfVotes++;
-        if (isSupported) {
-            prop.currentResult++;
-        }
+        voting(proposalNumber, isSupported);
         return (prop.numberOfVotes, prop.currentResult);
     }
 
@@ -162,6 +167,7 @@ contract MultiSig is owned {
         require(balanceOf[etherRecipient] + etherAmount >= balanceOf[etherRecipient]); // Check for overflows
         balanceOf[msg.sender] -= etherAmount;
         balanceOf[etherRecipient] += etherAmount;
+        return true;
     }
 
     //Count the votes proposal and execute if there are more than half support votes
